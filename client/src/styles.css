@@ -1,0 +1,11 @@
+:root{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+body{margin:0;background:#f4f6fb;color:#10233b}
+.header{background:#0f2a60;color:#fff;padding:1rem}
+.container{padding:1rem}
+.add-form{display:flex;gap:0.5rem;margin-bottom:1rem}
+.add-form input{padding:0.5rem;border-radius:6px;border:1px solid #d7dee9;flex:1}
+.add-form button{padding:0.5rem 1rem;border-radius:6px;border:none;background:#ffd200}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+.tile{background:#fff;padding:1rem;border-radius:10px;box-shadow:0 8px 20px rgba(15,42,96,0.06)}
+.tile.up{border-left:6px solid #28a745}
+.tile.down{border-left:6px solid #dc3545}

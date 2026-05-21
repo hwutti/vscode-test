@@ -1,4 +1,12 @@
-.claude/
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+.env
+.env.*
+/server/data/
+client/node_modules/
+.claude/.claude/
 .DS_Store
 Thumbs.db
 node_modules/

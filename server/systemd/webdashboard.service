@@ -1,0 +1,16 @@
+[Unit]
+Description=WebDashboard service
+After=network.target
+
+[Service]
+Type=simple
+User=webdashboard
+WorkingDirectory=/var/lib/webdashboard/app/server
+Environment=NODE_ENV=production
+Environment=PORT=49615
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

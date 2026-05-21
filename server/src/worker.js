@@ -1,4 +1,5 @@
-const pLimit = require('p-limit');
+const pLimitModule = require('p-limit');
+const pLimit = pLimitModule.default || pLimitModule;
 const { URL } = require('url');
 
 function startWorker(db, options, sse) {

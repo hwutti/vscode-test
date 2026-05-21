@@ -62,3 +62,14 @@ process.on('SIGINT', () => {
   worker.stop && worker.stop();
   process.exit(0);
 });
+
+process.on('unhandledRejection', (reason) => {
+  logger.error({ reason }, 'Unhandled rejection');
+  console.error('Unhandled rejection', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error({ error }, 'Uncaught exception');
+  console.error('Uncaught exception', error);
+  process.exit(1);
+});

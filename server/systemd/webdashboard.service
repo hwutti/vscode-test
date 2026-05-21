@@ -8,7 +8,7 @@ User=webdashboard
 WorkingDirectory=/var/lib/webdashboard/app/server
 Environment=NODE_ENV=production
 Environment=PORT=49615
-ExecStart=/usr/bin/node src/index.js
+ExecStart=/usr/bin/node /var/lib/webdashboard/app/server/src/index.js
 Restart=on-failure
 RestartSec=5
 

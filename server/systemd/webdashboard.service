@@ -1,11 +1,12 @@
 [Unit]
 Description=WebDashboard service
-After=network.target
+After=network.target postgresql.service
 
 [Service]
 Type=simple
 User=webdashboard
 WorkingDirectory=/var/lib/webdashboard/app/server
+EnvironmentFile=-/etc/webdashboard/webdashboard.env
 Environment=NODE_ENV=production
 Environment=PORT=49615
 ExecStart=/usr/bin/node /var/lib/webdashboard/app/server/src/index.js

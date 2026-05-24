@@ -23,13 +23,13 @@ function startWorker(db, options, sse) {
       status = 'down';
     }
 
-    db.addCheck(id, status, responseMs);
-    db.updateStatus(id, status);
+    await db.addCheck(id, status, responseMs);
+    await db.updateStatus(id, status);
     if (sse) sse.broadcast({ type: 'check', serviceId: id, status, responseMs, checked_at: new Date().toISOString() });
   }
 
   async function runChecks() {
-    const services = db.getAllServices().filter(s => s.enabled === 1 || s.enabled === '1');
+    const services = (await db.getAllServices()).filter((s) => s.enabled === true || s.enabled === 1 || s.enabled === '1');
     const tasks = services.map(svc => limit(() => checkService(svc)));
     await Promise.all(tasks);
   }

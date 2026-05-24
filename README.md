@@ -2,12 +2,12 @@
 
 Minimal WebDashboard to monitor local webservices.
 
-Run server:
+Local development:
 
 ```bash
 cd server
 npm ci
-PORT=49615 node src/index.js
+DATABASE_URL=postgresql://webdashboard:webdashboard@127.0.0.1:5432/webdashboard PORT=49615 node src/index.js
 ```
 
 Run client in dev:
@@ -18,4 +18,12 @@ npm ci
 npm run dev
 ```
 
-Production build: build client then start server (server serves built files).
+Linux install/deploy (installs PostgreSQL + configures systemd + builds client):
+
+```bash
+sudo bash /var/lib/webdashboard/app/server/deploy.sh
+```
+
+The service reads `DATABASE_URL` from:
+
+`/etc/webdashboard/webdashboard.env`

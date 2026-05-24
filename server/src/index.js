@@ -8,7 +8,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const PORT = process.env.PORT || 49615;
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'data.sqlite');
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://webdashboard:webdashboard@127.0.0.1:5432/webdashboard';
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || 30000);
 const CHECK_CONCURRENCY = Number(process.env.CHECK_CONCURRENCY || 10);
 
@@ -20,8 +20,6 @@ const { startWorker } = require('./worker');
 
 const app = express();
 app.use(bodyParser.json());
-
-const db = initDb(DB_PATH);
 
 // SSE broadcaster
 const sseClients = new Set();
@@ -43,8 +41,6 @@ app.get('/api/events', (req, res) => {
   req.on('close', () => sseClients.delete(res));
 });
 
-app.use('/api/services', createRouter(db, { broadcast: sseBroadcast }));
-
 // serve client if built
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
@@ -52,14 +48,27 @@ if (fs.existsSync(clientDist)) {
   app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 }
 
-const worker = startWorker(db, { interval: POLL_INTERVAL_MS, concurrency: CHECK_CONCURRENCY }, { broadcast: sseBroadcast });
+let worker = null;
+let db = null;
 
-app.listen(PORT, () => {
-  logger.info({ port: PORT }, 'WebDashboard server listening');
+async function bootstrap() {
+  db = await initDb(DATABASE_URL);
+  app.use('/api/services', createRouter(db, { broadcast: sseBroadcast }));
+
+  worker = startWorker(db, { interval: POLL_INTERVAL_MS, concurrency: CHECK_CONCURRENCY }, { broadcast: sseBroadcast });
+  app.listen(PORT, () => {
+    logger.info({ port: PORT }, 'WebDashboard server listening');
+  });
+}
+
+bootstrap().catch((error) => {
+  logger.error({ error }, 'Failed to bootstrap server');
+  process.exit(1);
 });
 
-process.on('SIGINT', () => {
-  worker.stop && worker.stop();
+process.on('SIGINT', async () => {
+  worker && worker.stop && worker.stop();
+  if (db && db.close) await db.close();
   process.exit(0);
 });
 

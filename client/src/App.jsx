@@ -15,6 +15,52 @@ const STATUS_META = {
   disabled: { label: 'Paused', color: '#84705f' },
 }
 
+const BRANDING_STORAGE_KEY = 'webdashboard-branding-v1'
+
+const THEME_PRESETS = {
+  nebula: { label: 'Nebula', bg0: '#030912', bg1: '#071220', bg2: '#0a192d' },
+  aurora: { label: 'Aurora', bg0: '#05110f', bg1: '#07201b', bg2: '#0a2c25' },
+  titan: { label: 'Titan', bg0: '#120605', bg1: '#22100d', bg2: '#2e1814' },
+  eclipse: { label: 'Eclipse', bg0: '#07070c', bg1: '#121225', bg2: '#1a1a37' },
+}
+
+const DEFAULT_BRANDING = {
+  dashboardName: 'WebDashboard',
+  eyebrow: 'Orbital command',
+  hudTag: 'sector vx-77 / node uplink',
+  preset: 'nebula',
+  primaryColor: '#5be8ff',
+  glowColor: '#20f7d0',
+  warningColor: '#ffb955',
+  dangerColor: '#ff5d62',
+}
+
+function loadBranding() {
+  if (typeof window === 'undefined') return DEFAULT_BRANDING
+  try {
+    const raw = window.localStorage.getItem(BRANDING_STORAGE_KEY)
+    if (!raw) return DEFAULT_BRANDING
+    const parsed = JSON.parse(raw)
+    return { ...DEFAULT_BRANDING, ...parsed }
+  } catch (err) {
+    return DEFAULT_BRANDING
+  }
+}
+
+function applyBranding(branding) {
+  if (typeof document === 'undefined') return
+
+  const root = document.documentElement
+  const preset = THEME_PRESETS[branding.preset] || THEME_PRESETS.nebula
+  root.style.setProperty('--bg-0', preset.bg0)
+  root.style.setProperty('--bg-1', preset.bg1)
+  root.style.setProperty('--bg-2', preset.bg2)
+  root.style.setProperty('--cyan', branding.primaryColor)
+  root.style.setProperty('--glow', branding.glowColor)
+  root.style.setProperty('--amber', branding.warningColor)
+  root.style.setProperty('--down', branding.dangerColor)
+}
+
 function isEnabled(service) {
   return service.enabled === 1 || service.enabled === '1' || service.enabled === true
 }
@@ -288,6 +334,9 @@ export default function App() {
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [realtimeState, setRealtimeState] = useState('connecting')
+  const [branding, setBranding] = useState(loadBranding)
+  const [brandingDraft, setBrandingDraft] = useState(loadBranding)
+  const [brandingOpen, setBrandingOpen] = useState(false)
   const [editService, setEditService] = useState(null)
   const [editName, setEditName] = useState('')
   const [editUrl, setEditUrl] = useState('')
@@ -357,6 +406,13 @@ export default function App() {
       es.close()
     }
   }, [])
+
+  useEffect(() => {
+    applyBranding(branding)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(branding))
+    }
+  }, [branding])
 
   const counts = useMemo(() => {
     return services.reduce(
@@ -469,6 +525,30 @@ export default function App() {
     }
   }
 
+  function openBrandingMenu() {
+    setBrandingDraft(branding)
+    setBrandingOpen(true)
+  }
+
+  function closeBrandingMenu() {
+    setBrandingOpen(false)
+  }
+
+  function updateBrandingDraft(key, value) {
+    setBrandingDraft((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function saveBranding(e) {
+    e.preventDefault()
+    setBranding({
+      ...brandingDraft,
+      dashboardName: brandingDraft.dashboardName.trim() || DEFAULT_BRANDING.dashboardName,
+      eyebrow: brandingDraft.eyebrow.trim() || DEFAULT_BRANDING.eyebrow,
+      hudTag: brandingDraft.hudTag.trim() || DEFAULT_BRANDING.hudTag,
+    })
+    setBrandingOpen(false)
+  }
+
   function beginEdit(service) {
     setEditService(service)
     setEditName(service.name)
@@ -529,11 +609,15 @@ export default function App() {
       <div className="bg-layer" aria-hidden />
       <header className="topbar">
         <div>
-          <p className="eyebrow">Orbital command</p>
-          <h1>WebDashboard</h1>
+          <p className="eyebrow">{branding.eyebrow}</p>
+          <h1>{branding.dashboardName}</h1>
         </div>
         <div className="topbar__meta">
-          <p className="hud-tag">sector vx-77 / node uplink</p>
+          <button className="button button-outline topbar__brand-btn" type="button" onClick={openBrandingMenu}>
+            <span aria-hidden>B</span>
+            Branding
+          </button>
+          <p className="hud-tag">{branding.hudTag}</p>
           <div className={`connection is-${realtimeState}`}>
             <span />
             {realtimeState}
@@ -705,6 +789,101 @@ export default function App() {
               </button>
               <button className="button button-primary" type="submit" disabled={editSaving}>
                 {editSaving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {brandingOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Dashboard branding">
+          <form className="branding-modal panel panel-glow" onSubmit={saveBranding}>
+            <h2>Dashboard branding</h2>
+            <div className="field">
+              <label htmlFor="brand-dashboard-name">Dashboard name</label>
+              <input
+                id="brand-dashboard-name"
+                value={brandingDraft.dashboardName}
+                onChange={(e) => updateBrandingDraft('dashboardName', e.target.value)}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="brand-eyebrow">Header label</label>
+              <input
+                id="brand-eyebrow"
+                value={brandingDraft.eyebrow}
+                onChange={(e) => updateBrandingDraft('eyebrow', e.target.value)}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="brand-hud-tag">HUD tag</label>
+              <input
+                id="brand-hud-tag"
+                value={brandingDraft.hudTag}
+                onChange={(e) => updateBrandingDraft('hudTag', e.target.value)}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="brand-preset">Theme preset</label>
+              <select
+                id="brand-preset"
+                className="select-field"
+                value={brandingDraft.preset}
+                onChange={(e) => updateBrandingDraft('preset', e.target.value)}
+              >
+                {Object.entries(THEME_PRESETS).map(([key, preset]) => (
+                  <option key={key} value={key}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="color-grid">
+              <label className="color-field">
+                <span>Primary</span>
+                <input
+                  type="color"
+                  value={brandingDraft.primaryColor}
+                  onChange={(e) => updateBrandingDraft('primaryColor', e.target.value)}
+                />
+              </label>
+              <label className="color-field">
+                <span>Glow</span>
+                <input
+                  type="color"
+                  value={brandingDraft.glowColor}
+                  onChange={(e) => updateBrandingDraft('glowColor', e.target.value)}
+                />
+              </label>
+              <label className="color-field">
+                <span>Warning</span>
+                <input
+                  type="color"
+                  value={brandingDraft.warningColor}
+                  onChange={(e) => updateBrandingDraft('warningColor', e.target.value)}
+                />
+              </label>
+              <label className="color-field">
+                <span>Danger</span>
+                <input
+                  type="color"
+                  value={brandingDraft.dangerColor}
+                  onChange={(e) => updateBrandingDraft('dangerColor', e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="edit-modal__actions">
+              <button className="button button-outline" type="button" onClick={() => setBrandingDraft(DEFAULT_BRANDING)}>
+                Defaults
+              </button>
+              <button className="button button-outline" type="button" onClick={closeBrandingMenu}>
+                Cancel
+              </button>
+              <button className="button button-primary branding-save" type="submit">
+                Save branding
               </button>
             </div>
           </form>

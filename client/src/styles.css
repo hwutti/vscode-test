@@ -125,6 +125,11 @@ button:disabled {
   gap: 0.5rem;
 }
 
+.topbar__brand-btn {
+  min-height: 34px;
+  padding: 0.36rem 0.62rem;
+}
+
 .hud-tag {
   background: rgba(7, 25, 44, 0.76);
   border: 1px solid rgba(91, 232, 255, 0.28);
@@ -523,6 +528,17 @@ button:disabled {
   width: 100%;
 }
 
+.select-field {
+  background: rgba(4, 16, 29, 0.82);
+  border: 1px solid rgba(91, 232, 255, 0.26);
+  border-radius: 7px;
+  color: #d7f8ff;
+  min-height: 40px;
+  outline: none;
+  padding: 0.55rem 0.62rem;
+  width: 100%;
+}
+
 .field input:focus,
 .search input:focus {
   border-color: var(--glow);
@@ -822,10 +838,55 @@ button:disabled {
   width: 100%;
 }
 
+.branding-modal {
+  max-width: 640px;
+  width: 100%;
+}
+
+.color-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.color-field {
+  background: rgba(4, 16, 29, 0.82);
+  border: 1px solid rgba(91, 232, 255, 0.26);
+  border-radius: 7px;
+  display: grid;
+  gap: 0.32rem;
+  padding: 0.45rem;
+}
+
+.color-field span {
+  color: var(--muted);
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.color-field input[type='color'] {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  height: 32px;
+  padding: 0;
+  width: 100%;
+}
+
 .edit-modal__actions {
   display: grid;
   gap: 0.5rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.branding-modal .edit-modal__actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.branding-save {
+  grid-column: span 1;
 }
 
 .empty-state {
@@ -917,6 +978,7 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .color-grid,
   .edit-modal__actions {
     grid-template-columns: 1fr;
   }

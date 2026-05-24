@@ -16,7 +16,13 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y git postgresql postgresql-contrib nodejs npm
+apt-get install -y git postgresql postgresql-contrib nodejs
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm not found. With NodeSource, npm should be bundled with nodejs."
+  echo "Please verify your Node.js installation (node -v, npm -v)."
+  exit 1
+fi
 
 id webdashboard >/dev/null 2>&1 || useradd --system --home /var/lib/webdashboard --create-home --shell /usr/sbin/nologin webdashboard
 install -d -o webdashboard -g webdashboard /var/lib/webdashboard

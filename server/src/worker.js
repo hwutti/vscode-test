@@ -1,7 +1,5 @@
 const pLimitModule = require('p-limit');
 const pLimit = pLimitModule.default || pLimitModule;
-const { URL } = require('url');
-
 function startWorker(db, options, sse) {
   const { interval = 30000, concurrency = 10 } = options || {};
   const limit = pLimit(concurrency);
@@ -14,10 +12,13 @@ function startWorker(db, options, sse) {
       const start = Date.now();
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(svc.url, { signal: controller.signal });
-      clearTimeout(timeout);
-      responseMs = Date.now() - start;
-      if (res.ok) status = 'up';
+      try {
+        const res = await fetch(svc.url, { signal: controller.signal });
+        responseMs = Date.now() - start;
+        if (res.ok) status = 'up';
+      } finally {
+        clearTimeout(timeout);
+      }
     } catch (err) {
       status = 'down';
     }

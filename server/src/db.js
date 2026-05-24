@@ -28,11 +28,27 @@ function initDb(dbPath) {
     );
   `);
 
-  const getAllServices = db.prepare('SELECT * FROM services ORDER BY id DESC');
-  const getServiceById = db.prepare('SELECT * FROM services WHERE id = ?');
+  const serviceSelect = `
+    SELECT services.*,
+      (
+        SELECT response_ms
+        FROM checks
+        WHERE checks.service_id = services.id
+        ORDER BY checks.id DESC
+        LIMIT 1
+      ) AS latest_response_ms
+    FROM services
+  `;
+  const getAllServices = db.prepare(`${serviceSelect} ORDER BY services.id DESC`);
+  const getServiceById = db.prepare(`${serviceSelect} WHERE services.id = ?`);
   const insertService = db.prepare('INSERT INTO services (name, url, enabled) VALUES (?, ?, ?)');
   const updateService = db.prepare('UPDATE services SET name = ?, url = ?, enabled = ? WHERE id = ?');
-  const deleteService = db.prepare('DELETE FROM services WHERE id = ?');
+  const deleteChecksForService = db.prepare('DELETE FROM checks WHERE service_id = ?');
+  const deleteServiceRow = db.prepare('DELETE FROM services WHERE id = ?');
+  const deleteService = db.transaction((id) => {
+    deleteChecksForService.run(id);
+    return deleteServiceRow.run(id);
+  });
   const insertCheck = db.prepare('INSERT INTO checks (service_id, status, response_ms) VALUES (?, ?, ?)');
   const updateServiceStatus = db.prepare('UPDATE services SET last_status = ?, last_checked_at = ? WHERE id = ?');
 

@@ -127,6 +127,42 @@ function StatusDonut({ counts }) {
   )
 }
 
+function SignalField({ counts, availability }) {
+  const active = Math.max(1, counts.total - counts.disabled)
+  const threatRatio = Math.min(1, counts.down / active)
+  const unknownRatio = Math.min(1, counts.unknown / active)
+  const sweepLabel = availability >= 90 ? 'stable' : availability >= 65 ? 'warning' : 'critical'
+
+  return (
+    <div className="signal-field">
+      <svg viewBox="0 0 260 180" role="img" aria-label="Signal map">
+        <defs>
+          <radialGradient id="pulse" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="rgba(32, 247, 208, 0.32)" />
+            <stop offset="100%" stopColor="rgba(32, 247, 208, 0)" />
+          </radialGradient>
+        </defs>
+        <rect x="4" y="4" width="252" height="172" rx="8" className="signal-bg" />
+        <g className="signal-grid">
+          <line x1="26" y1="90" x2="234" y2="90" />
+          <line x1="130" y1="20" x2="130" y2="160" />
+          <circle cx="130" cy="90" r="28" />
+          <circle cx="130" cy="90" r="54" />
+          <circle cx="130" cy="90" r="78" />
+        </g>
+        <circle cx="130" cy="90" r="70" fill="url(#pulse)" />
+        <line x1="130" y1="90" x2="210" y2="55" className="signal-sweep" />
+        <circle cx={90 + threatRatio * 96} cy={65 + unknownRatio * 50} r="4.5" className="signal-point signal-point-danger" />
+        <circle cx={66 + (availability / 100) * 140} cy="122" r="4.5" className="signal-point signal-point-ok" />
+      </svg>
+      <div className="signal-caption">
+        <span>Threat {Math.round(threatRatio * 100)}%</span>
+        <strong>{sweepLabel}</strong>
+      </div>
+    </div>
+  )
+}
+
 function ResponseBars({ services }) {
   const samples = services
     .map((service) => ({
@@ -423,10 +459,11 @@ export default function App() {
       <div className="bg-layer" aria-hidden />
       <header className="topbar">
         <div>
-          <p className="eyebrow">Ops dashboard</p>
+          <p className="eyebrow">Orbital command</p>
           <h1>WebDashboard</h1>
         </div>
         <div className="topbar__meta">
+          <p className="hud-tag">sector vx-77 / node uplink</p>
           <div className={`connection is-${realtimeState}`}>
             <span />
             {realtimeState}
@@ -440,8 +477,8 @@ export default function App() {
 
       <main className="page">
         <section className="insights">
-          <article className="panel panel-summary">
-            <h2>Availability</h2>
+          <article className="panel panel-summary panel-glow">
+            <h2>Mission integrity</h2>
             <p className="availability-number">{availability}%</p>
             <p className="panel-subtitle">
               {counts.up} of {activeCount} active services are up
@@ -466,8 +503,8 @@ export default function App() {
             </div>
           </article>
 
-          <article className="panel panel-chart">
-            <h2>Status mix</h2>
+          <article className="panel panel-chart panel-glow">
+            <h2>System ring</h2>
             <StatusDonut counts={counts} />
             <ul className="legend">
               {Object.entries(STATUS_META).map(([key, config]) => (
@@ -480,15 +517,16 @@ export default function App() {
             </ul>
           </article>
 
-          <article className="panel panel-latency">
-            <h2>Slowest responses</h2>
+          <article className="panel panel-latency panel-glow">
+            <h2>Latency spectrum</h2>
             <ResponseBars services={services} />
+            <SignalField counts={counts} availability={availability} />
           </article>
         </section>
 
         <section className="workspace">
-          <aside className="panel panel-form">
-            <h2>Add service</h2>
+          <aside className="panel panel-form panel-glow">
+            <h2>Inject endpoint</h2>
             <form onSubmit={addService} className="add-form">
               <div className="field">
                 <label htmlFor="service-name">Name</label>
@@ -518,7 +556,7 @@ export default function App() {
             </form>
           </aside>
 
-          <section className="panel panel-services" aria-label="Services">
+          <section className="panel panel-services panel-glow" aria-label="Services">
             <div className="toolbar">
               <div className="search">
                 <label htmlFor="service-search">Search</label>

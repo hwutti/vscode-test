@@ -41,19 +41,19 @@ app.get('/api/events', (req, res) => {
   req.on('close', () => sseClients.delete(res));
 });
 
-// serve client if built
-const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
-if (fs.existsSync(clientDist)) {
-  app.use(express.static(clientDist));
-  app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
-}
-
 let worker = null;
 let db = null;
 
 async function bootstrap() {
   db = await initDb(DATABASE_URL);
   app.use('/api/services', createRouter(db, { broadcast: sseBroadcast }));
+
+  // serve client if built; register after API routes so /api/* always returns JSON
+  const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
+  if (fs.existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+    app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  }
 
   worker = startWorker(db, { interval: POLL_INTERVAL_MS, concurrency: CHECK_CONCURRENCY }, { broadcast: sseBroadcast });
   app.listen(PORT, () => {

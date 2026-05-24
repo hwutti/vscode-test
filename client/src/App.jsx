@@ -201,7 +201,7 @@ function ResponseBars({ services }) {
   )
 }
 
-function ServiceTile({ service, onDelete, onToggle, busy }) {
+function ServiceTile({ service, onDelete, onToggle, onEdit, busy }) {
   const state = getServiceState(service)
   const enabled = isEnabled(service)
   const statusText = STATUS_META[state]?.label || 'Unknown'
@@ -242,6 +242,16 @@ function ServiceTile({ service, onDelete, onToggle, busy }) {
 
       <div className="service-actions">
         <button
+          className="button button-outline"
+          type="button"
+          onClick={() => onEdit(service)}
+          disabled={busy}
+          title="Edit service"
+        >
+          <span aria-hidden>E</span>
+          Edit
+        </button>
+        <button
           className="button button-ghost"
           type="button"
           onClick={() => onToggle(service)}
@@ -278,6 +288,11 @@ export default function App() {
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [realtimeState, setRealtimeState] = useState('connecting')
+  const [editService, setEditService] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editUrl, setEditUrl] = useState('')
+  const [editError, setEditError] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -454,6 +469,61 @@ export default function App() {
     }
   }
 
+  function beginEdit(service) {
+    setEditService(service)
+    setEditName(service.name)
+    setEditUrl(service.url)
+    setEditError('')
+  }
+
+  function closeEdit() {
+    setEditService(null)
+    setEditName('')
+    setEditUrl('')
+    setEditError('')
+    setEditSaving(false)
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault()
+    if (!editService) return
+
+    let normalizedUrl = ''
+    try {
+      normalizedUrl = normalizeUrl(editUrl)
+    } catch (err) {
+      setEditError('Enter a valid URL.')
+      return
+    }
+
+    setEditSaving(true)
+    setBusyId(editService.id)
+    setEditError('')
+    setError('')
+
+    try {
+      const res = await fetch(`/api/services/${editService.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName.trim(),
+          url: normalizedUrl,
+          enabled: isEnabled(editService),
+        }),
+      })
+      const payload = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(payload?.error || 'Service could not be updated.')
+
+      setServices((prev) => prev.map((item) => (item.id === payload.id ? payload : item)))
+      closeEdit()
+    } catch (err) {
+      setEditError(err.message)
+    } finally {
+      setBusyId(null)
+      setEditSaving(false)
+    }
+  }
+
   return (
     <div className="app-shell">
       <div className="bg-layer" aria-hidden />
@@ -594,7 +664,8 @@ export default function App() {
                     service={service}
                     onDelete={deleteService}
                     onToggle={(item) => updateService(item, { enabled: !isEnabled(item) })}
-                    busy={busyId === service.id}
+                    onEdit={beginEdit}
+                    busy={busyId === service.id || (editSaving && editService?.id === service.id)}
                   />
                 ))}
               </div>
@@ -604,6 +675,41 @@ export default function App() {
           </section>
         </section>
       </main>
+
+      {editService && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Edit service">
+          <form className="edit-modal panel panel-glow" onSubmit={saveEdit}>
+            <h2>Edit service</h2>
+            <div className="field">
+              <label htmlFor="edit-service-name">Name</label>
+              <input
+                id="edit-service-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="edit-service-url">URL</label>
+              <input
+                id="edit-service-url"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                required
+              />
+            </div>
+            {editError && <p className="notice notice-error">{editError}</p>}
+            <div className="edit-modal__actions">
+              <button className="button button-outline" type="button" onClick={closeEdit} disabled={editSaving}>
+                Cancel
+              </button>
+              <button className="button button-primary" type="submit" disabled={editSaving}>
+                {editSaving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }
